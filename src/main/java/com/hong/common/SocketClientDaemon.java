@@ -21,7 +21,7 @@ public class SocketClientDaemon {
         // 分别开始启动这20个客户端
         for (int index = 0; index < clientNumber; index++, countDownLatch.countDown()) {
             logger.info("开始启动第【" + index + "】个客户端...");
-            SocketClientRequestThread2 client = new SocketClientRequestThread2(countDownLatch, index);
+            SocketClientRequestThread client = new SocketClientRequestThread(countDownLatch, index);
             new Thread(client).start();
         }
 
