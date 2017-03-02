@@ -4,14 +4,18 @@ import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.*;
 import io.netty.util.AttributeKey;
 import io.netty.util.CharsetUtil;
+import io.netty.util.concurrent.DefaultThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
+import java.nio.channels.spi.SelectorProvider;
+import java.util.concurrent.ThreadFactory;
 
 /**
  * 使用 Netty 的 Http 编码/解码处理器，设计的一个简单的WEB服务器
@@ -27,6 +31,13 @@ public class TestHTTPNetty {
 
         // ==================== 下面我们设置线程池
         EventLoopGroup bossLoopGroup = new NioEventLoopGroup(1);
+        ThreadFactory threadFactory = new DefaultThreadFactory("work thread pool");
+        int processorsNumber = Runtime.getRuntime().availableProcessors();
+        EventLoopGroup workLoogGroup = new NioEventLoopGroup(processorsNumber * 2, threadFactory, SelectorProvider.provider());
+        serverBootstrap.group(bossLoopGroup, workLoogGroup);
+
+        // ===================== 下面设置我们服务的通道类型
+        serverBootstrap.channel(NioServerSocketChannel.class);
 
         // ==================== 设置处理器
         serverBootstrap.childHandler(new ChannelInitializer<NioSocketChannel>() {
@@ -56,6 +67,7 @@ class HTTPServerHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        logger.info("channelRead(ChannelHandlerContext ctx, Object msg)");
         /**
          * 在测试中，我们首先取出客户端传来的参数、URL信息，并且返回给一个确认信息。
          * 要使用 HTTP 服务，我们首先要了解 Netty 中 http 的格式，如下：
